@@ -230,9 +230,29 @@
     }
 
     // ===== STICKER.LY IMPORT =====
-    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+    const PROXIES = [
+      (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+      (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    ];
     let stickerUrls = [];
     let selectedStickers = new Set();
+    let workingProxy = null;
+
+    async function fetchWithProxy(url) {
+      // If we already found a working proxy, try it first
+      if (workingProxy !== null) {
+        const res = await fetch(PROXIES[workingProxy](url));
+        if (res.ok) return res;
+      }
+      // Try all proxies
+      for (let i = 0; i < PROXIES.length; i++) {
+        try {
+          const res = await fetch(PROXIES[i](url), { signal: AbortSignal.timeout(10000) });
+          if (res.ok) { workingProxy = i; return res; }
+        } catch (e) { continue; }
+      }
+      throw new Error('לא הצלחתי לגשת לקישור. נסה שוב מאוחר יותר.');
+    }
 
     async function importFromStickerLy() {
       const link = document.getElementById('stickerlyLink').value.trim();
@@ -254,9 +274,7 @@
       importProgressFill.style.width = '30%';
 
       try {
-        const response = await fetch(CORS_PROXY + encodeURIComponent(link));
-        if (!response.ok) throw new Error('לא הצלחתי לגשת לקישור');
-
+        const response = await fetchWithProxy(link);
         const html = await response.text();
         importProgressFill.style.width = '60%';
 
@@ -277,7 +295,7 @@
         importProgressFill.style.width = '100%';
         importStatus.textContent = `נמצאו ${stickerUrls.length} סטיקרים!`;
 
-        // Display stickers in grid
+        // Display stickers in grid - load images directly (stickerly CDN allows cross-origin images)
         stickerGrid.innerHTML = '';
         selectedStickers = new Set();
         stickerUrls.forEach((url, index) => {
@@ -286,7 +304,8 @@
           item.onclick = () => toggleSticker(index);
           item.id = `sticker-${index}`;
           item.innerHTML = `
-            <img src="${CORS_PROXY}${encodeURIComponent(url)}" alt="sticker ${index + 1}" loading="lazy">
+            <img src="${url}" alt="sticker ${index + 1}" loading="lazy" crossorigin="anonymous"
+                 onerror="this.src='${PROXIES[0](url)}'">
             <div class="sticker-check">&#10003;</div>
           `;
           stickerGrid.appendChild(item);
@@ -350,7 +369,7 @@
       for (const index of selectedStickers) {
         try {
           const url = stickerUrls[index];
-          const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+          const response = await fetchWithProxy(url);
           const blob = await response.blob();
 
           // Convert to PNG for Telegram static stickers (512x512)
@@ -409,7 +428,7 @@
       for (const index of selectedStickers) {
         try {
           const url = stickerUrls[index];
-          const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+          const response = await fetchWithProxy(url);
           const blob = await response.blob();
           const pngBlob = await convertToPng512(blob);
           files.push(new File([pngBlob], `sticker_${index + 1}.png`, { type: 'image/png' }));
