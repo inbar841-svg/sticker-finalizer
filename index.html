@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sticker Finalizer</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    h1 { font-size: 2em; color: #e94560; margin-bottom: 8px; }
+    .subtitle { color: #aaa; margin-bottom: 40px; font-size: 1.1em; }
+
+    .btn {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      padding: 18px 40px;
+      border-radius: 16px;
+      font-size: 1.2em;
+      font-weight: bold;
+      cursor: pointer;
+      min-width: 260px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(233,69,96,0.4);
+      transition: all 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn:disabled { background: #555; box-shadow: none; }
+
+    .hidden { display: none; }
+
+    .progress-container {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 300px;
+    }
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #16213e;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: #4ecca3;
+      border-radius: 4px;
+      transition: width 0.3s;
+      width: 0%;
+    }
+    .status {
+      color: #4ecca3;
+      font-size: 1em;
+      margin-top: 12px;
+      text-align: center;
+    }
+    .error { color: #e94560; }
+
+    .result-area {
+      margin-top: 30px;
+      text-align: center;
+    }
+    .result-area video {
+      max-width: 256px;
+      max-height: 256px;
+      border-radius: 12px;
+      border: 2px solid #e94560;
+    }
+    .result-info {
+      color: #aaa;
+      font-size: 0.9em;
+      margin: 10px 0;
+    }
+    .btn-download {
+      background: #4ecca3;
+      margin-top: 10px;
+    }
+    .btn-share {
+      background: #0088cc;
+      margin-top: 10px;
+    }
+
+    .info-box {
+      margin-top: 40px;
+      background: #16213e;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 350px;
+    }
+    .info-box h3 { color: #e94560; margin-bottom: 10px; }
+    .info-box p { color: #ccc; font-size: 0.9em; margin-bottom: 4px; }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-left: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    input[type="file"] { display: none; }
+  </style>
+</head>
+<body>
+
+  <h1>Sticker Finalizer</h1>
+  <p class="subtitle">ממיר וידאו לסטיקר טלגרם</p>
+
+  <button class="btn" id="pickBtn" onclick="document.getElementById('fileInput').click()">
+    בחר וידאו 🎬
+  </button>
+  <input type="file" id="fileInput" accept="video/*">
+
+  <div class="progress-container hidden" id="progressArea">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <p class="status" id="statusText">טוען FFmpeg...</p>
+  </div>
+
+  <div class="result-area hidden" id="resultArea">
+    <video id="preview" autoplay loop muted playsinline></video>
+    <p class="result-info" id="resultInfo"></p>
+    <button class="btn btn-download" id="downloadBtn">הורד סטיקר ⬇️</button>
+    <br>
+    <button class="btn btn-share hidden" id="shareBtn">שתף לטלגרם 📤</button>
+  </div>
+
+  <div class="info-box">
+    <h3>מה זה עושה?</h3>
+    <p>• ממיר כל וידאו לפורמט סטיקר טלגרם</p>
+    <p>• גודל מקסימלי: 512x512 פיקסלים</p>
+    <p>• אורך מקסימלי: 3 שניות</p>
+    <p>• משקל מקסימלי: 256KB</p>
+    <p>• פורמט: WebM (VP9)</p>
+  </div>
+
+  <script type="module">
+    // Use FFmpeg.wasm
+    const { FFmpeg: FFmpegClass } = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
+    const { fetchFile, toBlobURL } = await import('https://esm.sh/@ffmpeg/util@0.12.1');
+
+    const ffmpeg = new FFmpegClass();
+    const fileInput = document.getElementById('fileInput');
+    const pickBtn = document.getElementById('pickBtn');
+    const progressArea = document.getElementById('progressArea');
+    const progressFill = document.getElementById('progressFill');
+    const statusText = document.getElementById('statusText');
+    const resultArea = document.getElementById('resultArea');
+    const preview = document.getElementById('preview');
+    const resultInfo = document.getElementById('resultInfo');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const shareBtn = document.getElementById('shareBtn');
+
+    let outputBlob = null;
+    let ffmpegLoaded = false;
+
+    async function loadFFmpeg() {
+      statusText.textContent = 'טוען FFmpeg (פעם ראשונה בלבד)...';
+      progressArea.classList.remove('hidden');
+
+      const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
+
+      ffmpeg.on('progress', ({ progress }) => {
+        progressFill.style.width = `${Math.round(progress * 100)}%`;
+        statusText.textContent = `ממיר... ${Math.round(progress * 100)}%`;
+      });
+
+      ffmpeg.on('log', ({ message }) => {
+        console.log('FFmpeg:', message);
+      });
+
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+
+      ffmpegLoaded = true;
+    }
+
+    async function processVideo(file) {
+      try {
+        pickBtn.disabled = true;
+        progressArea.classList.remove('hidden');
+        resultArea.classList.add('hidden');
+        progressFill.style.width = '0%';
+
+        if (!ffmpegLoaded) {
+          await loadFFmpeg();
+        }
+
+        statusText.textContent = 'קורא את הקובץ...';
+        progressFill.style.width = '10%';
+
+        const inputName = 'input' + getExtension(file.name);
+        const outputName = 'sticker.webm';
+
+        await ffmpeg.writeFile(inputName, await fetchFile(file));
+
+        statusText.textContent = 'ממיר לסטיקר...';
+        progressFill.style.width = '20%';
+
+        // FFmpeg command for Telegram sticker format
+        await ffmpeg.exec([
+          '-i', inputName,
+          '-t', '2.9',
+          '-vf', 'scale=512:512:force_original_aspect_ratio=decrease',
+          '-c:v', 'libvpx-vp9',
+          '-b:v', '256k',
+          '-an',
+          '-y',
+          outputName
+        ]);
+
+        statusText.textContent = 'מסיים...';
+        progressFill.style.width = '90%';
+
+        const data = await ffmpeg.readFile(outputName);
+        outputBlob = new Blob([data.buffer], { type: 'video/webm' });
+
+        const sizeKB = Math.round(outputBlob.size / 1024);
+
+        // Show result
+        const url = URL.createObjectURL(outputBlob);
+        preview.src = url;
+        resultInfo.textContent = `גודל: ${sizeKB}KB`;
+
+        if (sizeKB > 256) {
+          resultInfo.textContent += ' ⚠️ הקובץ גדול מ-256KB, נסה וידאו קצר יותר';
+          resultInfo.classList.add('error');
+        } else {
+          resultInfo.classList.remove('error');
+          resultInfo.textContent += ' ✅';
+        }
+
+        resultArea.classList.remove('hidden');
+        progressFill.style.width = '100%';
+        statusText.textContent = 'הסטיקר מוכן!';
+
+        // Show share button if Web Share API is available
+        if (navigator.canShare && navigator.canShare({ files: [new File([outputBlob], 'sticker.webm', { type: 'video/webm' })] })) {
+          shareBtn.classList.remove('hidden');
+        }
+
+        // Cleanup input file
+        await ffmpeg.deleteFile(inputName);
+        await ffmpeg.deleteFile(outputName);
+
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = 'שגיאה: ' + err.message;
+        statusText.classList.add('error');
+      } finally {
+        pickBtn.disabled = false;
+      }
+    }
+
+    function getExtension(filename) {
+      const ext = filename.split('.').pop().toLowerCase();
+      return '.' + (ext || 'mp4');
+    }
+
+    // File picker
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) processVideo(file);
+    });
+
+    // Download button
+    downloadBtn.addEventListener('click', () => {
+      if (!outputBlob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(outputBlob);
+      a.download = 'sticker.webm';
+      a.click();
+    });
+
+    // Share button (works on mobile - sends directly to Telegram)
+    shareBtn.addEventListener('click', async () => {
+      if (!outputBlob) return;
+      const file = new File([outputBlob], 'sticker.webm', { type: 'video/webm' });
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Telegram Sticker',
+        });
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Share failed:', err);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
