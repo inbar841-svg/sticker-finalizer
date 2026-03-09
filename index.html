@@ -191,11 +191,11 @@
         <span id="selectedCount" style="color:#4ecca3;">0 נבחרו</span>
       </div>
       <div class="sticker-grid" id="stickerGrid"></div>
-      <button class="btn btn-green" id="downloadSelected" onclick="downloadSelectedStickers()" style="margin-top:20px;">
-        הורד נבחרים לטלגרם ⬇️
+      <button class="btn btn-blue" id="shareSelected" onclick="shareToTelegram()" style="margin-top:20px;">
+        שלח לטלגרם 📤
       </button>
-      <button class="btn btn-blue hidden" id="shareSelected" onclick="shareSelectedStickers()" style="margin-top:10px;">
-        שתף נבחרים 📤
+      <button class="btn btn-green" id="downloadSelected" onclick="downloadAsZip()" style="margin-top:10px;">
+        הורד כ-ZIP ⬇️
       </button>
     </div>
   </div>
@@ -314,10 +314,7 @@
         stickerResults.classList.remove('hidden');
         updateSelectedCount();
 
-        // Show share button if available
-        if (navigator.share) {
-          document.getElementById('shareSelected').classList.remove('hidden');
-        }
+        // Buttons are always visible
 
       } catch (err) {
         console.error(err);
@@ -356,93 +353,96 @@
       document.getElementById('selectedCount').textContent = `${selectedStickers.size} נבחרו`;
     }
 
-    async function downloadSelectedStickers() {
-      if (selectedStickers.size === 0) {
-        alert('בחר לפחות סטיקר אחד');
-        return;
-      }
+    // Fetch a sticker as original WebP blob (full quality)
+    async function fetchStickerBlob(url) {
+      const response = await fetchWithProxy(url);
+      return await response.blob();
+    }
+
+    // Main action: share to Telegram via Web Share API
+    async function shareToTelegram() {
+      if (selectedStickers.size === 0) { alert('בחר לפחות סטיקר אחד'); return; }
 
       const importStatus = document.getElementById('importStatus');
-      importStatus.textContent = 'מוריד סטיקרים...';
+      const btn = document.getElementById('shareSelected');
+      btn.disabled = true;
 
-      let downloaded = 0;
-      for (const index of selectedStickers) {
-        try {
-          const url = stickerUrls[index];
-          const response = await fetchWithProxy(url);
-          const blob = await response.blob();
+      try {
+        const files = [];
+        let count = 0;
+        const total = selectedStickers.size;
 
-          // Convert to PNG for Telegram static stickers (512x512)
-          const pngBlob = await convertToPng512(blob);
-
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(pngBlob);
-          a.download = `sticker_${index + 1}.png`;
-          a.click();
-          URL.revokeObjectURL(a.href);
-
-          downloaded++;
-          importStatus.textContent = `הורד ${downloaded}/${selectedStickers.size}...`;
-          // Small delay between downloads
-          await new Promise(r => setTimeout(r, 500));
-        } catch (err) {
-          console.error(`Failed to download sticker ${index}:`, err);
+        for (const index of selectedStickers) {
+          count++;
+          importStatus.textContent = `מכין סטיקר ${count}/${total}...`;
+          const blob = await fetchStickerBlob(stickerUrls[index]);
+          files.push(new File([blob], `sticker_${count}.webp`, { type: 'image/webp' }));
         }
-      }
-      importStatus.textContent = `הורדו ${downloaded} סטיקרים בהצלחה! שלח אותם כקובץ בטלגרם`;
-    }
 
-    // Convert WebP to 512x512 PNG (Telegram static sticker format)
-    function convertToPng512(blob) {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = 512;
-          canvas.height = 512;
-          const ctx = canvas.getContext('2d');
-
-          // Calculate scaling to fit 512x512 while maintaining aspect ratio
-          const scale = Math.min(512 / img.width, 512 / img.height);
-          const w = img.width * scale;
-          const h = img.height * scale;
-          const x = (512 - w) / 2;
-          const y = (512 - h) / 2;
-
-          ctx.clearRect(0, 0, 512, 512);
-          ctx.drawImage(img, x, y, w, h);
-
-          canvas.toBlob(resolve, 'image/png');
-        };
-        img.src = URL.createObjectURL(blob);
-      });
-    }
-
-    async function shareSelectedStickers() {
-      if (selectedStickers.size === 0) {
-        alert('בחר לפחות סטיקר אחד');
-        return;
-      }
-
-      const files = [];
-      for (const index of selectedStickers) {
-        try {
-          const url = stickerUrls[index];
-          const response = await fetchWithProxy(url);
-          const blob = await response.blob();
-          const pngBlob = await convertToPng512(blob);
-          files.push(new File([pngBlob], `sticker_${index + 1}.png`, { type: 'image/png' }));
-        } catch (err) {
-          console.error(err);
-        }
-      }
-
-      if (files.length > 0 && navigator.canShare && navigator.canShare({ files })) {
-        try {
+        if (navigator.canShare && navigator.canShare({ files })) {
+          importStatus.textContent = 'פותח שיתוף...';
           await navigator.share({ files, title: 'Telegram Stickers' });
-        } catch (err) {
-          if (err.name !== 'AbortError') console.error(err);
+          importStatus.textContent = 'נשלח בהצלחה!';
+        } else {
+          importStatus.textContent = 'השיתוף לא נתמך בדפדפן הזה. מוריד כ-ZIP...';
+          await downloadAsZip();
         }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          importStatus.textContent = 'בוטל';
+        } else {
+          console.error(err);
+          importStatus.textContent = 'שגיאה בשיתוף. מנסה ZIP...';
+          await downloadAsZip();
+        }
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // Fallback: download all as ZIP
+    async function downloadAsZip() {
+      if (selectedStickers.size === 0) { alert('בחר לפחות סטיקר אחד'); return; }
+
+      const importStatus = document.getElementById('importStatus');
+      const btn = document.getElementById('downloadSelected');
+      btn.disabled = true;
+
+      try {
+        if (!window.JSZip) {
+          importStatus.textContent = 'טוען...';
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+          });
+        }
+
+        const zip = new JSZip();
+        let count = 0;
+        const total = selectedStickers.size;
+
+        for (const index of selectedStickers) {
+          count++;
+          importStatus.textContent = `מוסיף ${count}/${total} ל-ZIP...`;
+          const blob = await fetchStickerBlob(stickerUrls[index]);
+          zip.file(`sticker_${count}.webp`, blob);
+        }
+
+        importStatus.textContent = 'יוצר ZIP...';
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(zipBlob);
+        a.download = 'stickers.zip';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        importStatus.textContent = `הורד ZIP עם ${count} סטיקרים!`;
+      } catch (err) {
+        console.error(err);
+        importStatus.textContent = 'שגיאה: ' + err.message;
+      } finally {
+        btn.disabled = false;
       }
     }
   </script>
