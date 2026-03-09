@@ -18,36 +18,75 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 20px;
+      padding: 40px 20px;
     }
     h1 { font-size: 2em; color: #e94560; margin-bottom: 8px; }
-    .subtitle { color: #aaa; margin-bottom: 40px; font-size: 1.1em; }
+    .subtitle { color: #aaa; margin-bottom: 30px; font-size: 1.1em; }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 30px;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 400px;
+    }
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      background: #16213e;
+      color: #aaa;
+      border: none;
+      font-size: 1em;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab.active { background: #e94560; color: #fff; }
+
+    .section { width: 100%; max-width: 400px; }
+    .hidden { display: none; }
 
     .btn {
       background: #e94560;
       color: #fff;
       border: none;
-      padding: 18px 40px;
+      padding: 16px 32px;
       border-radius: 16px;
-      font-size: 1.2em;
+      font-size: 1.1em;
       font-weight: bold;
       cursor: pointer;
-      min-width: 260px;
+      width: 100%;
+      max-width: 300px;
       text-align: center;
       box-shadow: 0 4px 15px rgba(233,69,96,0.4);
       transition: all 0.2s;
+      display: block;
+      margin: 10px auto;
     }
     .btn:active { transform: scale(0.97); }
     .btn:disabled { background: #555; box-shadow: none; }
+    .btn-green { background: #4ecca3; box-shadow: 0 4px 15px rgba(78,204,163,0.4); }
+    .btn-blue { background: #0088cc; box-shadow: 0 4px 15px rgba(0,136,204,0.4); }
 
-    .hidden { display: none; }
-
-    .progress-container {
-      margin-top: 20px;
+    .link-input {
       width: 100%;
-      max-width: 300px;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 2px solid #16213e;
+      background: #0f0f23;
+      color: #fff;
+      font-size: 1em;
+      margin-bottom: 12px;
+      text-align: right;
+      direction: ltr;
     }
+    .link-input:focus { border-color: #e94560; outline: none; }
+    .link-input::placeholder { color: #555; }
+
+    .progress-container { margin-top: 20px; width: 100%; }
     .progress-bar {
       width: 100%;
       height: 8px;
@@ -62,189 +101,407 @@
       transition: width 0.3s;
       width: 0%;
     }
-    .status {
-      color: #4ecca3;
-      font-size: 1em;
-      margin-top: 12px;
-      text-align: center;
-    }
+    .status { color: #4ecca3; font-size: 1em; margin-top: 12px; text-align: center; }
     .error { color: #e94560; }
 
-    .result-area {
-      margin-top: 30px;
-      text-align: center;
-    }
-    .result-area video {
-      max-width: 256px;
-      max-height: 256px;
+    .result-area { margin-top: 20px; text-align: center; }
+    .result-area video, .result-area img {
+      max-width: 200px;
+      max-height: 200px;
       border-radius: 12px;
       border: 2px solid #e94560;
     }
-    .result-info {
-      color: #aaa;
-      font-size: 0.9em;
-      margin: 10px 0;
-    }
-    .btn-download {
-      background: #4ecca3;
-      margin-top: 10px;
-    }
-    .btn-share {
-      background: #0088cc;
-      margin-top: 10px;
-    }
+    .result-info { color: #aaa; font-size: 0.9em; margin: 10px 0; }
 
-    .info-box {
-      margin-top: 40px;
+    .sticker-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .sticker-item {
       background: #16213e;
       border-radius: 12px;
-      padding: 20px;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .sticker-item:hover, .sticker-item.selected { border-color: #e94560; }
+    .sticker-item img {
       width: 100%;
-      max-width: 350px;
+      aspect-ratio: 1;
+      object-fit: contain;
+      border: none;
     }
-    .info-box h3 { color: #e94560; margin-bottom: 10px; }
-    .info-box p { color: #ccc; font-size: 0.9em; margin-bottom: 4px; }
+    .sticker-item .sticker-check {
+      display: none;
+      color: #4ecca3;
+      font-size: 0.8em;
+      margin-top: 4px;
+    }
+    .sticker-item.selected .sticker-check { display: block; }
 
-    .loading-spinner {
-      display: inline-block;
-      width: 24px;
-      height: 24px;
-      border: 3px solid rgba(255,255,255,0.3);
-      border-radius: 50%;
-      border-top-color: #fff;
-      animation: spin 0.8s linear infinite;
-      vertical-align: middle;
-      margin-left: 10px;
+    .select-all-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+      padding: 10px;
+      background: #16213e;
+      border-radius: 8px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .select-all-row label { color: #ccc; cursor: pointer; }
 
     input[type="file"] { display: none; }
+    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
   </style>
 </head>
 <body>
 
   <h1>Sticker Finalizer</h1>
-  <p class="subtitle">ממיר וידאו לסטיקר טלגרם</p>
+  <p class="subtitle">ממיר סטיקרים לטלגרם</p>
 
-  <button class="btn" id="pickBtn" onclick="document.getElementById('fileInput').click()">
-    בחר וידאו 🎬
-  </button>
-  <input type="file" id="fileInput" accept="video/*">
-
-  <div class="progress-container hidden" id="progressArea">
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-    <p class="status" id="statusText">טוען FFmpeg...</p>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tabImport" onclick="switchTab('import')">ייבוא מ-Sticker.ly</button>
+    <button class="tab" id="tabVideo" onclick="switchTab('video')">המרת וידאו</button>
   </div>
 
-  <div class="result-area hidden" id="resultArea">
-    <video id="preview" autoplay loop muted playsinline></video>
-    <p class="result-info" id="resultInfo"></p>
-    <button class="btn btn-download" id="downloadBtn">הורד סטיקר ⬇️</button>
-    <br>
-    <button class="btn btn-share hidden" id="shareBtn">שתף לטלגרם 📤</button>
+  <!-- Import Section -->
+  <div class="section" id="importSection">
+    <input type="text" class="link-input" id="stickerlyLink"
+           placeholder="הדבק קישור sticker.ly כאן..."
+           dir="ltr">
+    <button class="btn" id="importBtn" onclick="importFromStickerLy()">ייבא סטיקרים</button>
+
+    <div class="hidden" id="importProgress">
+      <div class="progress-container">
+        <div class="progress-bar"><div class="progress-fill" id="importProgressFill"></div></div>
+        <p class="status" id="importStatus">טוען...</p>
+      </div>
+    </div>
+
+    <div class="hidden" id="stickerResults">
+      <div class="select-all-row">
+        <label>
+          <input type="checkbox" id="selectAll" onchange="toggleSelectAll()"> בחר הכל
+        </label>
+        <span id="selectedCount" style="color:#4ecca3;">0 נבחרו</span>
+      </div>
+      <div class="sticker-grid" id="stickerGrid"></div>
+      <button class="btn btn-green" id="downloadSelected" onclick="downloadSelectedStickers()" style="margin-top:20px;">
+        הורד נבחרים לטלגרם ⬇️
+      </button>
+      <button class="btn btn-blue hidden" id="shareSelected" onclick="shareSelectedStickers()" style="margin-top:10px;">
+        שתף נבחרים 📤
+      </button>
+    </div>
   </div>
 
-  <div class="info-box">
-    <h3>מה זה עושה?</h3>
-    <p>• ממיר כל וידאו לפורמט סטיקר טלגרם</p>
-    <p>• גודל מקסימלי: 512x512 פיקסלים</p>
-    <p>• אורך מקסימלי: 3 שניות</p>
-    <p>• משקל מקסימלי: 256KB</p>
-    <p>• פורמט: WebM (VP9)</p>
+  <!-- Video Section -->
+  <div class="section hidden" id="videoSection">
+    <button class="btn" id="pickBtn" onclick="document.getElementById('fileInput').click()">
+      בחר וידאו 🎬
+    </button>
+    <input type="file" id="fileInput" accept="video/*">
+
+    <div class="progress-container hidden" id="progressArea">
+      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      <p class="status" id="statusText">טוען FFmpeg...</p>
+    </div>
+
+    <div class="result-area hidden" id="resultArea">
+      <video id="preview" autoplay loop muted playsinline></video>
+      <p class="result-info" id="resultInfo"></p>
+      <button class="btn btn-green" id="downloadBtn">הורד סטיקר ⬇️</button>
+      <button class="btn btn-blue hidden" id="shareBtn">שתף לטלגרם 📤</button>
+    </div>
   </div>
 
+  <script>
+    // ===== TAB SWITCHING =====
+    function switchTab(tab) {
+      document.getElementById('tabImport').classList.toggle('active', tab === 'import');
+      document.getElementById('tabVideo').classList.toggle('active', tab === 'video');
+      document.getElementById('importSection').classList.toggle('hidden', tab !== 'import');
+      document.getElementById('videoSection').classList.toggle('hidden', tab !== 'video');
+    }
+
+    // ===== STICKER.LY IMPORT =====
+    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+    let stickerUrls = [];
+    let selectedStickers = new Set();
+
+    async function importFromStickerLy() {
+      const link = document.getElementById('stickerlyLink').value.trim();
+      if (!link.includes('sticker.ly')) {
+        alert('נא להדביק קישור תקין מ-sticker.ly');
+        return;
+      }
+
+      const importProgress = document.getElementById('importProgress');
+      const importStatus = document.getElementById('importStatus');
+      const importProgressFill = document.getElementById('importProgressFill');
+      const stickerResults = document.getElementById('stickerResults');
+      const stickerGrid = document.getElementById('stickerGrid');
+
+      importProgress.classList.remove('hidden');
+      stickerResults.classList.add('hidden');
+      importStatus.textContent = 'מביא סטיקרים...';
+      importStatus.classList.remove('error');
+      importProgressFill.style.width = '30%';
+
+      try {
+        const response = await fetch(CORS_PROXY + encodeURIComponent(link));
+        if (!response.ok) throw new Error('לא הצלחתי לגשת לקישור');
+
+        const html = await response.text();
+        importProgressFill.style.width = '60%';
+
+        // Extract all sticker image URLs from the page
+        const urlPattern = /https:\/\/stickerly\.pstatic\.net\/sticker_pack\/[^"'\s)]+\.webp/g;
+        const allUrls = [...new Set(html.match(urlPattern) || [])];
+
+        // Filter out duplicates and thumbnails (keep high quality)
+        stickerUrls = allUrls.filter(url => !url.includes('thumb'));
+        if (stickerUrls.length === 0) stickerUrls = allUrls;
+
+        if (stickerUrls.length === 0) {
+          importStatus.textContent = 'לא נמצאו סטיקרים בקישור הזה';
+          importStatus.classList.add('error');
+          return;
+        }
+
+        importProgressFill.style.width = '100%';
+        importStatus.textContent = `נמצאו ${stickerUrls.length} סטיקרים!`;
+
+        // Display stickers in grid
+        stickerGrid.innerHTML = '';
+        selectedStickers = new Set();
+        stickerUrls.forEach((url, index) => {
+          const item = document.createElement('div');
+          item.className = 'sticker-item';
+          item.onclick = () => toggleSticker(index);
+          item.id = `sticker-${index}`;
+          item.innerHTML = `
+            <img src="${CORS_PROXY}${encodeURIComponent(url)}" alt="sticker ${index + 1}" loading="lazy">
+            <div class="sticker-check">&#10003;</div>
+          `;
+          stickerGrid.appendChild(item);
+        });
+
+        stickerResults.classList.remove('hidden');
+        updateSelectedCount();
+
+        // Show share button if available
+        if (navigator.share) {
+          document.getElementById('shareSelected').classList.remove('hidden');
+        }
+
+      } catch (err) {
+        console.error(err);
+        importStatus.textContent = 'שגיאה: ' + err.message;
+        importStatus.classList.add('error');
+      }
+    }
+
+    function toggleSticker(index) {
+      if (selectedStickers.has(index)) {
+        selectedStickers.delete(index);
+      } else {
+        selectedStickers.add(index);
+      }
+      document.getElementById(`sticker-${index}`).classList.toggle('selected');
+      document.getElementById('selectAll').checked = selectedStickers.size === stickerUrls.length;
+      updateSelectedCount();
+    }
+
+    function toggleSelectAll() {
+      const checked = document.getElementById('selectAll').checked;
+      stickerUrls.forEach((_, index) => {
+        const item = document.getElementById(`sticker-${index}`);
+        if (checked) {
+          selectedStickers.add(index);
+          item.classList.add('selected');
+        } else {
+          selectedStickers.delete(index);
+          item.classList.remove('selected');
+        }
+      });
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      document.getElementById('selectedCount').textContent = `${selectedStickers.size} נבחרו`;
+    }
+
+    async function downloadSelectedStickers() {
+      if (selectedStickers.size === 0) {
+        alert('בחר לפחות סטיקר אחד');
+        return;
+      }
+
+      const importStatus = document.getElementById('importStatus');
+      importStatus.textContent = 'מוריד סטיקרים...';
+
+      let downloaded = 0;
+      for (const index of selectedStickers) {
+        try {
+          const url = stickerUrls[index];
+          const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+          const blob = await response.blob();
+
+          // Convert to PNG for Telegram static stickers (512x512)
+          const pngBlob = await convertToPng512(blob);
+
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(pngBlob);
+          a.download = `sticker_${index + 1}.png`;
+          a.click();
+          URL.revokeObjectURL(a.href);
+
+          downloaded++;
+          importStatus.textContent = `הורד ${downloaded}/${selectedStickers.size}...`;
+          // Small delay between downloads
+          await new Promise(r => setTimeout(r, 500));
+        } catch (err) {
+          console.error(`Failed to download sticker ${index}:`, err);
+        }
+      }
+      importStatus.textContent = `הורדו ${downloaded} סטיקרים בהצלחה! שלח אותם כקובץ בטלגרם`;
+    }
+
+    // Convert WebP to 512x512 PNG (Telegram static sticker format)
+    function convertToPng512(blob) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 512;
+          canvas.height = 512;
+          const ctx = canvas.getContext('2d');
+
+          // Calculate scaling to fit 512x512 while maintaining aspect ratio
+          const scale = Math.min(512 / img.width, 512 / img.height);
+          const w = img.width * scale;
+          const h = img.height * scale;
+          const x = (512 - w) / 2;
+          const y = (512 - h) / 2;
+
+          ctx.clearRect(0, 0, 512, 512);
+          ctx.drawImage(img, x, y, w, h);
+
+          canvas.toBlob(resolve, 'image/png');
+        };
+        img.src = URL.createObjectURL(blob);
+      });
+    }
+
+    async function shareSelectedStickers() {
+      if (selectedStickers.size === 0) {
+        alert('בחר לפחות סטיקר אחד');
+        return;
+      }
+
+      const files = [];
+      for (const index of selectedStickers) {
+        try {
+          const url = stickerUrls[index];
+          const response = await fetch(CORS_PROXY + encodeURIComponent(url));
+          const blob = await response.blob();
+          const pngBlob = await convertToPng512(blob);
+          files.push(new File([pngBlob], `sticker_${index + 1}.png`, { type: 'image/png' }));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      if (files.length > 0 && navigator.canShare && navigator.canShare({ files })) {
+        try {
+          await navigator.share({ files, title: 'Telegram Stickers' });
+        } catch (err) {
+          if (err.name !== 'AbortError') console.error(err);
+        }
+      }
+    }
+  </script>
+
+  <!-- Video conversion (lazy loaded) -->
   <script type="module">
-    // Use FFmpeg.wasm
     const { FFmpeg: FFmpegClass } = await import('https://esm.sh/@ffmpeg/ffmpeg@0.12.10');
     const { fetchFile, toBlobURL } = await import('https://esm.sh/@ffmpeg/util@0.12.1');
 
     const ffmpeg = new FFmpegClass();
-    const fileInput = document.getElementById('fileInput');
-    const pickBtn = document.getElementById('pickBtn');
-    const progressArea = document.getElementById('progressArea');
-    const progressFill = document.getElementById('progressFill');
-    const statusText = document.getElementById('statusText');
-    const resultArea = document.getElementById('resultArea');
-    const preview = document.getElementById('preview');
-    const resultInfo = document.getElementById('resultInfo');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const shareBtn = document.getElementById('shareBtn');
-
-    let outputBlob = null;
     let ffmpegLoaded = false;
+    let outputBlob = null;
 
     async function loadFFmpeg() {
+      const statusText = document.getElementById('statusText');
+      const progressArea = document.getElementById('progressArea');
       statusText.textContent = 'טוען FFmpeg (פעם ראשונה בלבד)...';
       progressArea.classList.remove('hidden');
 
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-
       ffmpeg.on('progress', ({ progress }) => {
-        progressFill.style.width = `${Math.round(progress * 100)}%`;
+        document.getElementById('progressFill').style.width = `${Math.round(progress * 100)}%`;
         statusText.textContent = `ממיר... ${Math.round(progress * 100)}%`;
       });
-
-      ffmpeg.on('log', ({ message }) => {
-        console.log('FFmpeg:', message);
-      });
+      ffmpeg.on('log', ({ message }) => console.log('FFmpeg:', message));
 
       await ffmpeg.load({
         coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
       });
-
       ffmpegLoaded = true;
     }
 
     async function processVideo(file) {
+      const pickBtn = document.getElementById('pickBtn');
+      const progressArea = document.getElementById('progressArea');
+      const progressFill = document.getElementById('progressFill');
+      const statusText = document.getElementById('statusText');
+      const resultArea = document.getElementById('resultArea');
+      const preview = document.getElementById('preview');
+      const resultInfo = document.getElementById('resultInfo');
+      const shareBtn = document.getElementById('shareBtn');
+
       try {
         pickBtn.disabled = true;
         progressArea.classList.remove('hidden');
         resultArea.classList.add('hidden');
         progressFill.style.width = '0%';
 
-        if (!ffmpegLoaded) {
-          await loadFFmpeg();
-        }
+        if (!ffmpegLoaded) await loadFFmpeg();
 
         statusText.textContent = 'קורא את הקובץ...';
         progressFill.style.width = '10%';
 
-        const inputName = 'input' + getExtension(file.name);
-        const outputName = 'sticker.webm';
+        const ext = '.' + (file.name.split('.').pop().toLowerCase() || 'mp4');
+        const inputName = 'input' + ext;
 
         await ffmpeg.writeFile(inputName, await fetchFile(file));
-
         statusText.textContent = 'ממיר לסטיקר...';
         progressFill.style.width = '20%';
 
-        // FFmpeg command for Telegram sticker format
         await ffmpeg.exec([
-          '-i', inputName,
-          '-t', '2.9',
+          '-i', inputName, '-t', '2.9',
           '-vf', 'scale=512:512:force_original_aspect_ratio=decrease',
-          '-c:v', 'libvpx-vp9',
-          '-b:v', '256k',
-          '-an',
-          '-y',
-          outputName
+          '-c:v', 'libvpx-vp9', '-b:v', '256k', '-an', '-y', 'sticker.webm'
         ]);
 
         statusText.textContent = 'מסיים...';
         progressFill.style.width = '90%';
 
-        const data = await ffmpeg.readFile(outputName);
+        const data = await ffmpeg.readFile('sticker.webm');
         outputBlob = new Blob([data.buffer], { type: 'video/webm' });
-
         const sizeKB = Math.round(outputBlob.size / 1024);
 
-        // Show result
-        const url = URL.createObjectURL(outputBlob);
-        preview.src = url;
+        preview.src = URL.createObjectURL(outputBlob);
         resultInfo.textContent = `גודל: ${sizeKB}KB`;
-
         if (sizeKB > 256) {
-          resultInfo.textContent += ' ⚠️ הקובץ גדול מ-256KB, נסה וידאו קצר יותר';
+          resultInfo.textContent += ' - הקובץ גדול מ-256KB, נסה וידאו קצר יותר';
           resultInfo.classList.add('error');
         } else {
           resultInfo.classList.remove('error');
@@ -255,15 +512,12 @@
         progressFill.style.width = '100%';
         statusText.textContent = 'הסטיקר מוכן!';
 
-        // Show share button if Web Share API is available
         if (navigator.canShare && navigator.canShare({ files: [new File([outputBlob], 'sticker.webm', { type: 'video/webm' })] })) {
           shareBtn.classList.remove('hidden');
         }
 
-        // Cleanup input file
         await ffmpeg.deleteFile(inputName);
-        await ffmpeg.deleteFile(outputName);
-
+        await ffmpeg.deleteFile('sticker.webm');
       } catch (err) {
         console.error(err);
         statusText.textContent = 'שגיאה: ' + err.message;
@@ -273,19 +527,12 @@
       }
     }
 
-    function getExtension(filename) {
-      const ext = filename.split('.').pop().toLowerCase();
-      return '.' + (ext || 'mp4');
-    }
-
-    // File picker
-    fileInput.addEventListener('change', (e) => {
+    document.getElementById('fileInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (file) processVideo(file);
     });
 
-    // Download button
-    downloadBtn.addEventListener('click', () => {
+    document.getElementById('downloadBtn').addEventListener('click', () => {
       if (!outputBlob) return;
       const a = document.createElement('a');
       a.href = URL.createObjectURL(outputBlob);
@@ -293,19 +540,15 @@
       a.click();
     });
 
-    // Share button (works on mobile - sends directly to Telegram)
-    shareBtn.addEventListener('click', async () => {
+    document.getElementById('shareBtn').addEventListener('click', async () => {
       if (!outputBlob) return;
-      const file = new File([outputBlob], 'sticker.webm', { type: 'video/webm' });
       try {
         await navigator.share({
-          files: [file],
+          files: [new File([outputBlob], 'sticker.webm', { type: 'video/webm' })],
           title: 'Telegram Sticker',
         });
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
+        if (err.name !== 'AbortError') console.error(err);
       }
     });
   </script>
